@@ -9,25 +9,61 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../context/auth';
 import { useRouter } from 'expo-router';
-export default function Login() {
+import { supabase } from '../lib/supabase';
+
+export default function Register() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn } = useAuth();
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     try {
-      await signIn(email, password);
-    } catch (error) {
-      console.error('Login error:', error);
+      setLoading(true);
+      setError(null);
+      
+      // Basic validation
+      if (!email || !password) {
+        setError('Please fill in all fields');
+        return;
+      }
+  
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+  
+      if (error) {
+        setError(error.message);
+        return;
+      }
+  
+      // Instead of waiting for verification, directly sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+  
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+  
+      // On successful registration and sign in
+      router.replace('/(tabs)/');
+      
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
-
+  
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
@@ -38,9 +74,9 @@ export default function Login() {
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
-          
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Sign up to get started</Text>
+
           <View style={styles.inputContainer}>
             <TextInput
               placeholder="Email"
@@ -48,6 +84,8 @@ export default function Login() {
               onChangeText={setEmail}
               style={styles.input}
               placeholderTextColor="#9ca3af"
+              autoCapitalize="none"
+              keyboardType="email-address"
             />
             <TextInput
               placeholder="Password"
@@ -58,28 +96,36 @@ export default function Login() {
               placeholderTextColor="#9ca3af"
             />
           </View>
-  
-          <TouchableOpacity onPress={handleLogin} style={styles.loginButton}>
+
+          {error && (
+            <Text style={styles.errorText}>{error}</Text>
+          )}
+
+          <TouchableOpacity
+            onPress={handleRegister}
+            disabled={loading}
+            style={styles.registerButton}
+          >
             <LinearGradient
               colors={['#7b42d1', '#622eab']}
               style={styles.buttonGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.buttonText}>Sign In</Text>
+              <Text style={styles.buttonText}>
+                {loading ? 'Creating account...' : 'Create Account'}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
-  
-          {/* Add this new TouchableOpacity for registration */}
+
           <TouchableOpacity 
-            style={styles.registerLink}
-            onPress={() => router.push('/register')}
+            style={styles.loginLink}
+            onPress={() => router.push('/login')}
           >
-            <Text style={styles.registerText}>
-              Don't have an account? <Text style={styles.registerHighlight}>Sign Up</Text>
+            <Text style={styles.loginText}>
+              Already have an account? <Text style={styles.loginHighlight}>Sign In</Text>
             </Text>
           </TouchableOpacity>
-  
         </View>
       </LinearGradient>
     </KeyboardAvoidingView>
@@ -109,7 +155,6 @@ const styles = StyleSheet.create({
     color: 'rgba(254, 254, 254, 0.7)',
     marginBottom: 40,
   },
-  
   inputContainer: {
     gap: 20,
     marginBottom: 40,
@@ -123,7 +168,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#4d4d4d',
   },
-  loginButton: {
+  registerButton: {
     height: 55,
     borderRadius: 12,
     overflow: 'hidden',
@@ -139,23 +184,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  button: {  // Added missing button style
-    backgroundColor: '#622eab',
-    padding: 15,
-    borderRadius: 12,
+  loginLink: {
     alignItems: 'center',
-    marginTop: 20,
   },
-  registerLink: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  registerText: {
+  loginText: {
     color: 'rgba(254, 254, 254, 0.7)',
     fontSize: 16,
   },
-  registerHighlight: {
+  loginHighlight: {
     color: '#7b42d1',
     fontWeight: '600',
+  },
+  errorText: {
+    color: '#ff6666',
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });

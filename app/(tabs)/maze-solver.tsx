@@ -17,25 +17,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { useAuth0 } from '@auth0/auth0-react';
 import { useAuth } from '../../context/auth';
-import { getManagementApiToken, getAccessTokenSilently } from '@/utils/auth';
+import { supabase } from '../../lib/supabase';  // Add this at the top with other imports
 
-const storage = {
-  async getItem(key: string) {
-    if (Platform.OS === 'web') {
-      return localStorage.getItem(key);
-    }
-    return await SecureStore.getItemAsync(key);
-  },
-  async setItem(key: string, value: string) {
-    if (Platform.OS === 'web') {
-      localStorage.setItem(key, value);
-      return;
-    }
-    await SecureStore.setItemAsync(key, value);
-  }
-};
+
+
 
 
 const { width } = Dimensions.get('window');
@@ -51,24 +37,25 @@ interface MazeState {
 }
 
 export default function MazeSolver() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, session } = useAuth();  // Replace isAuthenticated with session
   
   useEffect(() => {
     console.log("Current user:", user);
-    console.log("User ID:", user?.sub);
+    console.log("User ID:", user?.id);  // Supabase uses 'id' instead of 'sub'
   }, [user]);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = await storage.getItem('auth_token');
+      if (!session || !user) return;
+      
       console.log('Auth State:', {
-        isAuthenticated,
+        isAuthenticated: !!session,
         user,
-        hasToken: !!token
+        hasSession: !!session
       });
     };
     checkAuth();
-  }, [isAuthenticated, user]);
+  }, [session, user]);
   
   // State management
   const [maze, setMaze] = useState<number[][]>([]);
@@ -264,23 +251,6 @@ export default function MazeSolver() {
     }>;
   } | null>(null);
 
-  const auth0Domain = 'dev-yyxwjv0qx8jvs6dy.us.auth0.com';
-  
-  const getAuthToken = async () => {
-    try {
-      const token = await storage.getItem('auth_token');
-      if (!token) {
-        throw new Error('No auth token found');
-      }
-      // Ensure token is in proper Bearer format
-      return token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    } catch (error) {
-      console.error('Error getting auth token:', error);
-      throw error;
-    }
-  };
-
-  const auth0ClientId = '35VyC5zTT00MnLgiW1qoO8sCRYA6pnnK';
 
   interface SolveData {
     date: string;
@@ -300,67 +270,68 @@ export default function MazeSolver() {
 
   const updateUserStats = async (solveData: SolveData) => {
     try {
-      if (!user?.sub) {
+      if (!user?.id) {
         throw new Error('No user ID found');
       }
-
-      const token = await getAccessTokenSilently();
-      if (!token) {
-        throw new Error('Could not get access token');
+  
+      const { data: existingStats, error: fetchError } = await supabase
+        .from('maze_stats')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+  
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
-
-      const userResponse = await fetch(`https://${auth0Domain}/api/v2/users/${encodeURIComponent(user.sub)}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
+  
+      const newSolveHistory = [
+        ...(existingStats?.solve_history || []),
+        solveData
+      ];
+  
+      const { error: upsertError } = await supabase
+        .from('maze_stats')
+        .upsert({
+          user_id: user.id,
+          mazes_solved: (existingStats?.mazes_solved || 0) + 1,
+          solve_history: newSolveHistory
+        });
+  
+      if (upsertError) throw upsertError;
+  
+      setUserStats({
+        mazesSolved: (existingStats?.mazes_solved || 0) + 1,
+        solveHistory: newSolveHistory
       });
-
-      let currentMetadata: UserMetadata = {};
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        currentMetadata = userData.user_metadata || {};
-      }
-
-      const newMetadata: UserMetadata = {
-        mazesSolved: (currentMetadata.mazesSolved || 0) + 1,
-        solveHistory: [
-          ...(currentMetadata.solveHistory || []),
-          solveData
-        ]
-      };
-
-      // Update with merged metadata
-      const response = await fetch(`https://${auth0Domain}/api/v2/users/${encodeURIComponent(user.sub)}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_metadata: newMetadata
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Update failed:', errorData);
-        throw new Error(errorData.message || 'Failed to update user stats');
-      }
-
-      const updatedStats = await response.json();
-      setUserStats(updatedStats.user_metadata);
-
+  
     } catch (error) {
       console.error('Error updating user stats:', error);
       setState(prev => ({ ...prev, status: 'Error updating stats' }));
     }
-};
+  };
 
   useEffect(() => {
-    console.log("Auth status:", { isAuthenticated, user });
-  }, [isAuthenticated, user]);
+    if (user?.id) {
+      const loadUserStats = async () => {
+        const { data, error } = await supabase
+          .from('maze_stats')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+  
+        if (!error && data) {
+          setUserStats({
+            mazesSolved: data.mazes_solved,
+            solveHistory: data.solve_history
+          });
+        }
+      };
+      loadUserStats();
+    }
+  }, [user?.id]);
+  
+
+
 
   const handleSolveMaze = async () => {
     if (state.solving || !maze.length) return;
