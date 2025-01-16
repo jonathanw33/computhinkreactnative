@@ -1,30 +1,47 @@
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../context/auth';
-import { useRouter } from 'expo-router';
+import { supabase } from '../lib/supabase';
+
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn } = useAuth();
-  const router = useRouter();
-
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
-      await signIn(email, password);
+      setLoading(true);
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      router.replace('/(tabs)/');
+      
     } catch (error) {
       console.error('Login error:', error);
+      alert('Failed to sign in');
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <KeyboardAvoidingView 
@@ -59,14 +76,20 @@ export default function Login() {
             />
           </View>
   
-          <TouchableOpacity onPress={handleLogin} style={styles.loginButton}>
+          <TouchableOpacity 
+            onPress={handleLogin} 
+            style={styles.loginButton}
+            disabled={loading}
+          >
             <LinearGradient
               colors={['#7b42d1', '#622eab']}
               style={styles.buttonGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.buttonText}>Sign In</Text>
+              <Text style={styles.buttonText}>
+                {loading ? 'Signing in...' : 'Sign In'}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
   
