@@ -41,14 +41,24 @@ interface Styles {
   container: ViewStyle;
   mainContainer: ViewStyle;
   headerContainer: ViewStyle;
-  headerGradient: ViewStyle; 
-  optionGradient: ViewStyle;  
-  navButtonGradient: ViewStyle;  
+  headerGradient: ViewStyle;
+  optionGradient: ViewStyle;
+  navButtonGradient: ViewStyle;
+    headerInner: ViewStyle;
+  titleCard: ViewStyle;
   title: TextStyle;
+  glowEffect: ViewStyle;
+  statsContainer: ViewStyle;
   counterWrapper: ViewStyle;
-  counter: TextStyle;
+  counterLabel: TextStyle;
+  counterNumber: TextStyle;
+  counterTotal: TextStyle;
+  progressBarContainer: ViewStyle;
   progressBar: ViewStyle;
   progressFill: ViewStyle;
+  progressGradient: ViewStyle;
+  progressText: TextStyle;
+  counter: TextStyle;
   contentContainer: ViewStyle;
   question: TextStyle;
   optionsContainer: ViewStyle;
@@ -58,7 +68,7 @@ interface Styles {
   selectedOptionText: TextStyle;
   navigationContainer: ViewStyle;
   navButton: ViewStyle;
-  navButtonText: TextStyle;  
+  navButtonText: TextStyle;
   prevButton: ViewStyle;
   nextButton: ViewStyle;
   prevButtonText: TextStyle;
@@ -164,10 +174,10 @@ const OptionButton: React.FC<{
       onPress={onSelect}
     >
       <Animated.View style={[styles.option, animatedStyle]}>
-        <LinearGradient
-          colors={isSelected ? ['#7B42D1', '#622EAB'] : ['#fff', '#f8f8f8']}
-          style={styles.optionGradient}
-        >
+          <LinearGradient
+            colors={isSelected ? ['#7B42D1', '#622EAB'] : ['#2A2A2A', '#242424']}
+            style={styles.optionGradient}
+          >
           <Text style={[
             styles.optionText,
             isSelected && styles.selectedOptionText
@@ -221,17 +231,43 @@ const QuizContent: React.FC<{
     <View style={styles.mainContainer}>
       <Animated.View style={[styles.headerContainer, headerStyle]}>
         <LinearGradient
-          colors={['#7B42D1', '#622EAB']}
+          colors={['#2D1B69', '#7B42D1']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
         >
-          <Text style={styles.title}>Computational Thinking Quiz</Text>
-          <View style={styles.counterWrapper}>
-            <Text style={styles.counter}>
-              Question {currentQuestion + 1} of {questions.length}
-            </Text>
-          </View>
-          <View style={styles.progressBar}>
-            <Animated.View style={[styles.progressFill, progressStyle]} />
+          <View style={styles.headerInner}>
+            {/* Floating card effect for title */}
+            <View style={styles.titleCard}>
+              <Text style={styles.title}>Computational Thinking Quiz</Text>
+              <View style={styles.glowEffect} />
+            </View>
+            
+            {/* Modern counter design */}
+            <View style={styles.statsContainer}>
+              <View style={styles.counterWrapper}>
+                <Text style={styles.counterLabel}>Question</Text>
+                <Text style={styles.counterNumber}>{currentQuestion + 1}</Text>
+                <Text style={styles.counterTotal}>of {questions.length}</Text>
+              </View>
+              
+              {/* Enhanced progress bar */}
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBar}>
+                  <Animated.View style={[styles.progressFill, progressStyle]}>
+                    <LinearGradient
+                      colors={['#00F5A0', '#00D9F5']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.progressGradient}
+                    />
+                  </Animated.View>
+                </View>
+                <Text style={styles.progressText}>
+                  {Math.round(((currentQuestion + 1) / questions.length) * 100)}%
+                </Text>
+              </View>
+            </View>
           </View>
         </LinearGradient>
       </Animated.View>
@@ -461,192 +497,98 @@ const styles = StyleSheet.create<Styles>({
   container: {
     flex: 1,
     backgroundColor: '#161616',
+    paddingHorizontal: 8, // Added horizontal padding to main container
+
   },
   mainContainer: {
     flex: 1,
+    backgroundColor: '#161616',
   },
+
   headerContainer: {
-    backgroundColor: '#622eab',
-    padding: 20,
-    paddingBottom: 30,
+    overflow: 'hidden',
+    marginHorizontal : 10,
+    marginBottom : 10,
+    marginTop : 10,
+  },
+  headerGradient: {
+    paddingTop: 10, // Reduced from 40
+    paddingBottom: 15, // Reduced from 30
+    borderBottomLeftRadius: 20, // Reduced from 30
+    marginHorizontal: 10, // Reduced from 15
+    paddingHorizontal: 10, // Added horizontal padding
+    borderRadius: 20, // Changed to full borderRadius instead of just bottom
+
+  },
+  headerInner: {
+    paddingHorizontal: 15, // Reduced from 20
+    marginHorizontal: 5, // Added small margin to prevent edge cutoff
+
+  },
+  titleCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 15, // Reduced from 20
+    padding: 12, // Reduced from 20
+    marginBottom: 15, // Reduced from 25
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 }, // Reduced shadow
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    position: 'relative',
+    overflow: 'hidden',
   },
   title: {
-    fontSize: 20,  // Reduced from 24
-    fontWeight: 'bold',
+    fontSize: 20, // Reduced from 28
+    fontWeight: '800',
     color: '#fff',
-    marginBottom: 10, // Reduced from 16
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 5,
   },
   counterWrapper: {
-    alignSelf: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    padding: 8, // Reduced from 12
+    borderRadius: 12,
+    minWidth: 90, // Reduced from 120
   },
-  counter: {
-    fontSize: 14,  // Reduced from 16
+  counterLabel: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 10, // Reduced from 12
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  counterNumber: {
     color: '#fff',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingVertical: 6,  // Reduced from 8
-    paddingHorizontal: 12, // Reduced from 16
-    borderRadius: 15,
+    fontSize: 24, // Reduced from 32
+    fontWeight: '800',
+    lineHeight: 30, // Reduced from 40
+  },
+  counterTotal: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12, // Reduced from 14
+  },
+  progressBarContainer: {
+    flex: 1,
+    marginLeft: 15, // Reduced from 20
   },
   progressBar: {
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 1,
-    marginTop: 12, // Reduced from 20
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 1,
+    height: 6, // Reduced from 8
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 3,
+    overflow: 'hidden',
   },
   contentContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 20,
-    paddingBottom: 80, // Add this to ensure content doesn't get hidden behind navigation
-  },
-  question: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 24,
-  },optionsContainer: {
-    gap: 12,
-    paddingBottom: 20,
-  },
-  option: {
-    marginBottom: 12,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  selectedOption: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#1e293b',
-  },
-  selectedOptionText: {
-    color: '#fff',
-  },
-  navigationContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-  },
-  navButton: {
-    width: 140,
-    height: 45,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  prevButton: {
-    backgroundColor: '#fff',
-  },
-  nextButton: {
-    backgroundColor: '#6366f1',
-  },
-  prevButtonText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#6366f1',
-  },
-  nextButtonText: {
-    marginRight: 8,
-    fontSize: 16,
-    color: '#fff',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  disabledButtonText: {
-    color: '#ccc',
-  },
-  resultsContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 20,
-  },
-  resultTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 20,
-  },
-  resultsList: {
-    gap: 16,
-  },
-  resultItem: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  resultQuestion: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 12,
-  },
-  resultAnswer: {
-    padding: 12,
-    borderRadius: 6,
-  },
-  correctAnswer: {
-    backgroundColor: '#e6f4ea',
-  },
-  incorrectAnswer: {
-    backgroundColor: '#fce8e6',
-  },
-  answerText: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 4,
-  },
-  correctAnswerText: {
-    fontSize: 14,
-    color: '#137333',
-  },
-  scoreContainer: {
-    marginTop: 24,
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  scoreText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  tryAgainButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#6366f1',
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 24,
-    marginBottom: 32,
-  },
-  headerGradient: {
-    padding: 15,  // Reduced from 20
-    paddingTop: 20, // Reduced from 40
-    borderBottomLeftRadius: 20, // Reduced from 30
-    borderBottomRightRadius: 20, // Reduced from 30
+    backgroundColor: '#1E1E1E',
+    padding: 15, // Reduced from 20
+    paddingBottom: 80,
   },
   optionGradient: {
     padding: 16,
@@ -658,6 +600,183 @@ const styles = StyleSheet.create<Styles>({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  glowEffect: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    transform: [{ scale: 1.5 }],
+  },
+
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressGradient: {
+    flex: 1,
+  },
+  progressText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+    textAlign: 'right',
+  },
+
+
+  counter: {
+    fontSize: 14,
+    color: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 15,
+  },
+
+  question: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#E0E0E0',
+    marginBottom: 24,
+  },
+  optionsContainer: {
+    gap: 12,
+    paddingBottom: 20,
+  },
+  option: {
+    marginBottom: 12,
+    borderRadius: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    backgroundColor: '#2A2A2A', // Dark background for unselected options
+  },
+  selectedOption: {
+    backgroundColor: '#7B42D1',
+    borderColor: '#7B42D1',
+  },
+  optionText: {
+    fontSize: 16,
+    color: '#E0E0E0',
+  },
+  selectedOptionText: {
+    color: '#fff',
+  },
+  navigationContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#242424',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
+  },
+  navButton: {
+    width: 140,
+    height: 45,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  prevButton: {
+    backgroundColor: '#242424',
+  },
+  nextButton: {
+    backgroundColor: '#7B42D1',
+  },
+  prevButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#E0E0E0',
+  },
+  nextButtonText: {
+    marginRight: 8,
+    fontSize: 16,
+    color: '#fff',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  disabledButtonText: {
+    color: '#666',
+  },
+  resultsContainer: {
+    flex: 1,
+    backgroundColor: '#161616',
+    padding: 20,
+  },
+  resultTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+    marginBottom: 20,
+  },
+  resultsList: {
+    gap: 16,
+  },
+  resultItem: {
+    backgroundColor: '#242424',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  resultQuestion: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#E0E0E0',
+    marginBottom: 12,
+  },
+  resultAnswer: {
+    padding: 12,
+    borderRadius: 6,
+  },
+  correctAnswer: {
+    backgroundColor: '#1E3329',
+  },
+  incorrectAnswer: {
+    backgroundColor: '#392424',
+  },
+  answerText: {
+    fontSize: 14,
+    color: '#E0E0E0',
+    marginBottom: 4,
+  },
+  correctAnswerText: {
+    fontSize: 14,
+    color: '#4CAF50',
+  },
+  scoreContainer: {
+    marginTop: 24,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: '#242424',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  scoreText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+  },
+  tryAgainButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#7B42D1',
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 24,
+    marginBottom: 32,
   },
   navButtonText: {
     color: '#fff',

@@ -52,7 +52,8 @@ const features: Feature[] = [
 export default function Home() {
   const scrollY = useSharedValue(0);
   const backgroundProgress = useSharedValue(0);
-  const { logout } = useAuth();
+  const { signOut } = useAuth();  // Change from logout to signOut
+
 
   useEffect(() => {
     backgroundProgress.value = withRepeat(
@@ -200,7 +201,14 @@ export default function Home() {
             <Text style={styles.headerSubtitle}>Ready to explore algorithms?</Text>
           </View>
           <TouchableOpacity 
-            onPress={logout}
+            onPress={async () => {
+              try {
+                await signOut();
+                router.replace('/login');  // Add router navigation
+              } catch (error) {
+                console.error('Error signing out:', error);
+              }
+            }}
             style={styles.logoutButton}
           >
             <Ionicons name="log-out-outline" size={24} color="#fefefe" />
